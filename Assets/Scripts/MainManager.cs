@@ -1,11 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
+
+    public static MainManager Instance;
+
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
@@ -22,6 +26,15 @@ public class MainManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        if (Instance != null)
+        {
+            Destroy(Instance);
+        }
+        else
+        {
+            Instance = this;
+        }
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -70,7 +83,63 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        SaveHighScore();
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public int HighScore;
+
+    }
+
+    public void SaveHighScore()
+    {
+        if (IsHighScore())
+        {
+            Debug.Log("HIGH SCORE!");
+            SaveData data = new SaveData();
+            data.HighScore = m_Points;
+
+            string json = JsonUtility.ToJson(data);
+
+            File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+        }
+    }
+
+
+
+    public int getHighScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            int highscore = data.HighScore;
+            return highscore;
+        }
+        return 0;
+    }
+
+    public void LoadHighScore()
+    {
+        int highscore = getHighScore();
+        ScoreText.text = $"Score : {highscore.ToString()}";
+    }
+
+    public bool IsHighScore()
+    {
+        int points = m_Points;
+        int highscore = getHighScore();
+        if (m_Points > highscore)
+        {
+            return true;
+        }
+        return false;
+    }
+
+
 }
